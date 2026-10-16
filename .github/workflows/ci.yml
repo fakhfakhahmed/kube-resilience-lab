@@ -1,0 +1,82 @@
+name: Verify resilience lab
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  application:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts
+      - name: Syntax and integration tests
+        run: |
+          find src test scripts public -type f \( -name '*.mjs' -o -name '*.js' \) -print0 | xargs -0 -n1 node --check
+          bash -n scripts/kind-up.sh scripts/k8s-smoke.sh
+          npm test
+  kubernetes:
+    needs: application
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Install verified upstream Kind and kubectl binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/lab-bin"
+          cd "$RUNNER_TEMP/lab-bin"
+          curl --fail --silent --show-error --location --retry 3 -o kind-linux-amd64 https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64
+          curl --fail --silent --show-error --location --retry 3 -o kind-linux-amd64.sha256sum https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64.sha256sum
+          sha256sum --check kind-linux-amd64.sha256sum
+          mv kind-linux-amd64 kind
+          curl --fail --silent --show-error --location --retry 3 -o kubectl https://dl.k8s.io/release/v1.37.0/bin/linux/amd64/kubectl
+          curl --fail --silent --show-error --location --retry 3 -o kubectl.sha256 https://dl.k8s.io/release/v1.37.0/bin/linux/amd64/kubectl.sha256
+          echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
+          chmod +x kind kubectl
+          echo "$RUNNER_TEMP/lab-bin" >> "$GITHUB_PATH"
+      - name: Validate manifest rendering
+        run: |
+          kubectl kustomize deploy/base > /dev/null
+          kubectl kustomize deploy/monitoring > /dev/null
+      - name: Build image and deploy into dedicated Kind cluster
+        run: bash scripts/kind-up.sh
+      - name: Observe faults, endpoint withdrawal and container restart
+        run: bash scripts/k8s-smoke.sh
+      - name: Collect workload diagnostics
+        if: always()
+        continue-on-error: true
+        run: |
+          mkdir -p artifacts
+          kubectl --kubeconfig .lab/kubeconfig --context kind-kube-resilience-lab -n kube-resilience-lab get pods -o wide > artifacts/pods.txt
+          kubectl --kubeconfig .lab/kubeconfig --context kind-kube-resilience-lab -n kube-resilience-lab get events --sort-by=.metadata.creationTimestamp > artifacts/events.txt
+          kubectl --kubeconfig .lab/kubeconfig --context kind-kube-resilience-lab -n kube-resilience-lab logs deployment/lab-controller --tail=100 > artifacts/controller.log
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: kubernetes-evidence
+          path: artifacts/
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Delete only this CI lab cluster
+        if: always()
+        run: kind delete cluster --name kube-resilience-lab

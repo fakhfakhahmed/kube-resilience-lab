@@ -1,0 +1,13 @@
+node_modules/
+.env
+.env.*
+!.env.example
+*.log
+coverage/
+artifacts/
+.kube/
+.lab/
+evidence/
+.DS_Store
+Thumbs.db
+*.pid

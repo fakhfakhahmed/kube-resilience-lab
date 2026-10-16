@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lab-controller
+spec:
+  replicas: 1
+  # In-memory experiment state deliberately supports one controller only.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: lab-controller
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: lab-controller
+        app.kubernetes.io/part-of: kube-resilience-lab
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 10
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: controller
+          image: kube-resilience-lab:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - {name: HOST, value: "0.0.0.0"}
+            - {name: PORT, value: "8080"}
+            - {name: ENVIRONMENT, value: kubernetes}
+            - {name: TARGET_URL, value: "http://checkout-api:8081"}
+            - {name: TARGET_CONTROL_URL, value: "http://checkout-control:8081"}
+            - name: LAB_TOKEN
+              valueFrom:
+                secretKeyRef: {name: lab-tokens, key: LAB_TOKEN}
+            - name: TARGET_TOKEN
+              valueFrom:
+                secretKeyRef: {name: lab-tokens, key: TARGET_TOKEN}
+          resources:
+            requests: {cpu: 50m, memory: 48Mi}
+            limits: {cpu: 500m, memory: 128Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          startupProbe:
+            httpGet: {path: /health/live, port: http}
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet: {path: /health/ready, port: http}
+            periodSeconds: 2
+            failureThreshold: 1
+          livenessProbe:
+            httpGet: {path: /health/live, port: http}
+            periodSeconds: 5
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lab-controller
+spec:
+  selector:
+    app.kubernetes.io/name: lab-controller
+  ports:
+    - {name: http, port: 8080, targetPort: http}

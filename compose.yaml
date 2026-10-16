@@ -1,0 +1,51 @@
+name: kube-resilience-lab
+services:
+  controller:
+    build: .
+    image: kube-resilience-lab:local
+    init: true
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      HOST: 0.0.0.0
+      PORT: "8080"
+      ENVIRONMENT: local
+      TARGET_URL: http://target:8081
+      TARGET_CONTROL_URL: http://target:8081
+      LAB_TOKEN: ${LAB_TOKEN:?Set a random LAB_TOKEN in your environment or .env}
+      TARGET_TOKEN: ${TARGET_TOKEN:?Set a different random TARGET_TOKEN}
+    depends_on:
+      target:
+        condition: service_healthy
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+    cpus: 0.5
+    pids_limit: 64
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:8080/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+  target:
+    build: .
+    image: kube-resilience-lab:local
+    command: [node, src/target.mjs]
+    init: true
+    environment:
+      HOST: 0.0.0.0
+      TARGET_PORT: "8081"
+      ENABLE_FAULTS: "true"
+      TARGET_TOKEN: ${TARGET_TOKEN:?Set a different random TARGET_TOKEN}
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+    cpus: 0.5
+    pids_limit: 64
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:8081/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 3

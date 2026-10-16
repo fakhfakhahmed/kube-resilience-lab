@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+scrape_configs:
+  - job_name: resilience-controller
+    static_configs:
+      - targets: ["lab-controller:8080"]
+  - job_name: checkout-target
+    # Keep scraping intentional readiness failures through the control service.
+    static_configs:
+      - targets: ["checkout-control:8081"]

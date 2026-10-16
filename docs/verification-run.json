@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-10-16T14:54:50.007Z",
+  "context": "kind-kube-resilience-lab",
+  "scenarios": [
+    {
+      "scenario": "latency",
+      "reportId": "1089dcc9-abd3-428a-85ae-54240ab96ee5",
+      "baseline": {
+        "requests": 3,
+        "successRate": 100,
+        "p95Ms": 3.5,
+        "goodRate": 100
+      },
+      "impact": {
+        "requests": 15,
+        "successRate": 100,
+        "p95Ms": 654.96,
+        "goodRate": 0
+      },
+      "recovery": {
+        "requests": 5,
+        "successRate": 100,
+        "p95Ms": 3.74,
+        "goodRate": 100
+      },
+      "recoverySeconds": 1.95,
+      "readinessRemoved": null,
+      "podBefore": {
+        "name": "checkout-api-57b46cb86b-hf8k9",
+        "uid": "fd241cd3-e961-42a2-8e39-229c371070f3",
+        "restarts": 0
+      },
+      "podAfter": {
+        "name": "checkout-api-57b46cb86b-hf8k9",
+        "uid": "fd241cd3-e961-42a2-8e39-229c371070f3",
+        "restarts": 0
+      },
+      "containerRestartObserved": false
+    },
+    {
+      "scenario": "errors",
+      "reportId": "643b2535-10fd-443a-8b95-25961d7e4050",
+      "baseline": {
+        "requests": 3,
+        "successRate": 100,
+        "p95Ms": 3.38,
+        "goodRate": 100
+      },
+      "impact": {
+        "requests": 15,
+        "successRate": 46.67,
+        "p95Ms": 4.32,
+        "goodRate": 46.67
+      },
+      "recovery": {
+        "requests": 5,
+        "successRate": 100,
+        "p95Ms": 2.71,
+        "goodRate": 100
+      },
+      "recoverySeconds": 1.94,
+      "readinessRemoved": null,
+      "podBefore": {
+        "name": "checkout-api-57b46cb86b-hf8k9",
+        "uid": "fd241cd3-e961-42a2-8e39-229c371070f3",
+        "restarts": 0
+      },
+      "podAfter": {
+        "name": "checkout-api-57b46cb86b-hf8k9",
+        "uid": "fd241cd3-e961-42a2-8e39-229c371070f3",
+        "restarts": 0
+      },
+      "containerRestartObserved": false
+    },
+    {
+      "scenario": "readiness",
+      "reportId": "93153118-38e1-498e-bfef-5ed02ce03242",
+      "baseline": {
+        "requests": 3,
+        "successRate": 100,
+        "p95Ms": 2.48,
+        "goodRate": 100
+      },
+      "impact": {
+        "requests": 15,
+        "successRate": 13.33,
+        "p95Ms": 2.63,
+        "goodRate": 13.33
+      },
+      "recovery": {
+        "requests": 5,
+        "successRate": 80,
+        "p95Ms": 4.38,
+        "goodRate": 80
+      },
+      "recoverySeconds": 2.11,
+      "readinessRemoved": true,
+      "podBefore": {
+        "name": "checkout-api-57b46cb86b-hf8k9",
+        "uid": "fd241cd3-e961-42a2-8e39-229c371070f3",
+        "restarts": 0
+      },
+      "podAfter": {
+        "name": "checkout-api-57b46cb86b-hf8k9",
+        "uid": "fd241cd3-e961-42a2-8e39-229c371070f3",
+        "restarts": 0
+      },
+      "containerRestartObserved": false
+    },
+    {
+      "scenario": "liveness",
+      "reportId": "0e5c7fa7-d489-46a9-a984-d84c5b553896",
+      "baseline": {
+        "requests": 3,
+        "successRate": 100,
+        "p95Ms": 2.78,
+        "goodRate": 100
+      },
+      "impact": {
+        "requests": 15,
+        "successRate": 46.67,
+        "p95Ms": 3.43,
+        "goodRate": 46.67
+      },
+      "recovery": {
+        "requests": 5,
+        "successRate": 100,
+        "p95Ms": 3.56,
+        "goodRate": 100
+      },
+      "recoverySeconds": 1.23,
+      "readinessRemoved": null,
+      "podBefore": {
+        "name": "checkout-api-57b46cb86b-hf8k9",
+        "uid": "fd241cd3-e961-42a2-8e39-229c371070f3",
+        "restarts": 0
+      },
+      "podAfter": {
+        "name": "checkout-api-57b46cb86b-hf8k9",
+        "uid": "fd241cd3-e961-42a2-8e39-229c371070f3",
+        "restarts": 1
+      },
+      "containerRestartObserved": true
+    }
+  ],
+  "result": "passed",
+  "finishedAt": "2026-10-16T14:56:29.916Z"
+}
