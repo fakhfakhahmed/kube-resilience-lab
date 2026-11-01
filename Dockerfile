@@ -1,4 +1,4 @@
-FROM node:24-alpine
+FROM node:26-alpine
 
 LABEL org.opencontainers.image.title="Kube Resilience Lab" \
       org.opencontainers.image.description="A bounded Kubernetes resilience experiment lab" \
